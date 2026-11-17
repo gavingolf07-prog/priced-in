@@ -19,10 +19,13 @@ var mcp={
   var path=tool==='firecrawl_agent'?'agent':tool==='firecrawl_scrape'?'scrape':'search';
   var r=await J(await fetch(W+'/fc/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)}));
   if(path==='agent'&&a.schema&&a.schema.properties&&a.schema.properties.bears&&r&&r.id){
+   var bad=0;
    for(var i=0;i<150;i++){
     await new Promise(function(f){setTimeout(f,4000);});
-    var j=await J(await fetch(W+'/fc/agent/'+encodeURIComponent(r.id)));
-    if(j&&j.status==='completed')return{payload:j};
+    var j=null;
+    try{j=await J(await fetch(W+'/fc/agent/'+encodeURIComponent(r.id)));bad=0;}catch(e){if(++bad>10)throw e;continue;}
+    window.__piAgent=j;
+    if(j&&(j.status==='completed'||(j.data&&j.data.summary)))return{payload:j};
     if(j&&(j.status==='failed'||j.status==='cancelled'))throw{code:'upstream_error',message:String(j.error||j.status)};
    }
    throw{code:'timeout',message:'agent timed out'};
