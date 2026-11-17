@@ -1,10 +1,11 @@
-/* Standalone connector shim: authentication gate for all API and data access. */
+/* Priced In browser services: auth, account storage, and data connectors. */
 (function(){
 'use strict';
 var W='https://priced-in-proxy.gavingolf07.workers.dev';
 var TK='pi-sync-token', CACHE='pi-fmp-shared:v3:home', CACHE_TTL=4*60*60*1000;
 var meP=null, gate=null, authUser=null, pending=Object.create(null), activeTicker='';
 var LIMIT=5, TICKERS='pi-ticker-quota:v1:';
+/* Keep the application hidden until a server-verified session is available. */
 try{document.documentElement.style.visibility='hidden';}catch(e){}
 function token(){try{return localStorage.getItem(TK);}catch(e){return null;}}
 function authError(){var e=new Error('Please sign in with your email and password before loading data.');e.code='auth_required';return e;}
@@ -12,12 +13,11 @@ function nativeJson(r){return r.ok?r.json():r.text().then(function(t){var e=new 
 var realFetch=window.fetch.bind(window);
 function me(){if(!token()){authUser=null;return Promise.resolve(null);}if(!meP)meP=realFetch(W+'/auth/me',{headers:{Authorization:'Bearer '+token()}}).then(nativeJson).then(function(j){authUser=j.user||null;if(!authUser)throw authError();return authUser;}).catch(function(e){authUser=null;meP=null;try{localStorage.removeItem(TK);}catch(x){}showGate('Please sign in to continue.');throw e;});return meP;}
 function requireUser(){return me().then(function(u){if(!u){showGate('Sign in before loading any data.');throw authError();}reveal();return u;});}
-/* Reject direct Worker fetches before they leave the browser. */
+/* Protect direct app requests too; the only unauthenticated requests are login/register. */
 window.fetch=function(input,init){var url=typeof input==='string'?input:(input&&input.url)||'',isWorker=url.indexOf(W)===0,path=isWorker?url.slice(W.length).split('?')[0]:'';
  if(isWorker&&/^\/auth\/(login|register)$/.test(path))return realFetch(input,init);
  if(isWorker&&path==='/auth/me'){if(!token())return Promise.reject(authError());return realFetch(input,init);}
  if(isWorker&&path==='/auth/logout')return requireUser().then(function(){return realFetch(input,init);});
- if(isWorker)return requireUser().then(function(){return realFetch(input,init);});
  return requireUser().then(function(){return realFetch(input,init);});
 };
 function reveal(){try{document.documentElement.style.visibility='visible';if(document.body)document.body.style.visibility='visible';}catch(e){}if(gate)gate.hidden=true;}
@@ -34,16 +34,21 @@ function symbols(server,a){var out=[],valid=/^[A-Z][A-Z0-9.-]{0,9}$/;function ad
 function quota(user,items,home){if(home||!items.length)return;var k=TICKERS+String(user.id||user.email||'account'),used=[];try{used=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}if(!Array.isArray(used))used=[];var next=used.filter(function(s,i,a){return typeof s==='string'&&a.indexOf(s)===i;});items.forEach(function(s){if(next.indexOf(s)<0)next.push(s);});if(next.length>LIMIT){var e=new Error('You can load up to five unique stock tickers.');e.code='ticker_limit';throw e;}try{localStorage.setItem(k,JSON.stringify(next));}catch(e){}activeTicker=items[0];}
 var mcp={listTools:async function(){await requireUser();return{servers:[{server:'FMP',authStatus:'ok',tools:[]},{server:'Firecrawl',authStatus:'ok',tools:[]}]};},callTool:async function(server,tool,a){a=a||{};var u=await requireUser(),home=!!(document.body&&document.body.classList.contains('pg-on-home'));quota(u,symbols(server,a),home);
  if(server==='FMP'){var ep=a.endpoint||tool;if(home){var shared=fmpCacheRead();if(shared)return{payload:shared};}var q=new URLSearchParams();Object.keys(a).forEach(function(k){if(k!=='endpoint'&&a[k]!=null)q.set(k,a[k]);});var key=(home?'home:':'fmp:')+ep+':'+q.toString();if(pending[key])return pending[key];pending[key]=(async function(){var data=await nativeJson(await window.fetch(W+'/fmp/'+encodeURIComponent(ep)+'?'+q));if(home)fmpCacheWrite(data);return{payload:data};})();try{return await pending[key];}finally{delete pending[key];}}
- if(tool==='firecrawl_agent_status'){var id=String(a.id||'').replace(/^agent_run_/,'');return{payload:await nativeJson(await window.fetch(W+'/fc/agent/'+encodeURIComponent(id))) };}
+ if(tool==='firecrawl_agent_status'){var id=String(a.id||'').replace(/^agent_run_/,'');return{payload:await nativeJson(await window.fetch(W+'/fc/agent/'+encodeURIComponent(id)))};}
  var path=tool==='firecrawl_agent'?'agent':tool==='firecrawl_scrape'?'scrape':'search';var result=await nativeJson(await window.fetch(W+'/fc/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)}));
  if(path==='agent'&&a.schema&&a.schema.properties&&a.schema.properties.bears&&result&&result.id){var bad=0;for(var i=0;i<150;i++){await new Promise(function(r){setTimeout(r,4000);});var status;try{status=await nativeJson(await window.fetch(W+'/fc/agent/'+encodeURIComponent(result.id)));bad=0;}catch(e){if(++bad>10)throw e;continue;}window.__piAgent=status;if(status&&(status.status==='completed'||(status.data&&status.data.summary)))return{payload:status};if(status&&(status.status==='failed'||status.status==='cancelled'))throw{code:'upstream_error',message:String(status.error||status.status)};}throw{code:'timeout',message:'agent timed out'};}
  return{payload:result};}};
 function api(path,o){o=o||{};return requireUser().then(function(){var headers=Object.assign({},o.headers||{}),t=token();if(t)headers.Authorization='Bearer '+t;if(o.body)headers['Content-Type']='application/json';return window.fetch(W+path,{method:o.method||'GET',headers:headers,body:o.body}).then(nativeJson);});}
-function doc(path){var k='pi-sync-db:'+path,q='/db?path='+encodeURIComponent(path);return{get:async function(){await requireUser();var j=await api(q);return{exists:!!j.exists,data:function(){return JSON.parse(j.data);}};},set:async function(d){await requireUser();await api(q,{method:'PUT',body:JSON.stringify(d)});},update:async function(d){var x=await this.get();await this.set(Object.assign(x.exists?x.data():{},d));},delete:async function(){await requireUser();await api(q,{method:'DELETE'});}};}
+function doc(path){var q='/db?path='+encodeURIComponent(path);return{get:async function(){await requireUser();var j=await api(q);return{exists:!!j.exists,data:function(){return JSON.parse(j.data);}};},set:async function(d){await requireUser();await api(q,{method:'PUT',body:JSON.stringify(d)});},update:async function(d){var x=await this.get();await this.set(Object.assign(x.exists?x.data():{},d));},delete:async function(){await requireUser();await api(q,{method:'DELETE'});}};}
 var db={doc:doc,collection:function(c){return{doc:function(n){return doc(c+'/'+n);}};}},user={id:async function(){var u=await requireUser();return u.id;},me:async function(){var u=await requireUser();return{name:u.email};}};
-document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#acLogin,#acReg,#acOut');if(!t)return;if(t.id==='acOut'){api('/auth/logout',{method:'POST'}).catch(function(){}).then(function(){try{localStorage.removeItem(TK);}catch(x){}meP=null;authUser=null;location.reload();});return;}showGate('Use the sign-in form to continue.');});
 var downloads={save:async function(o){await requireUser();var d=o.data,b=d instanceof Blob?d:new Blob([typeof d==='string'?d:JSON.stringify(d)]),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download=o.filename||'download';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);}};
-window.claude={use:async function(n){await requireUser();return({mcp:mcp,db:db,user:user,downloads:downloads})[n]||null;}};
+/* New first-party API name. `var claude` is a temporary bridge for the legacy account helpers in index.html. */
+var pricedIn={use:async function(n){await requireUser();return({mcp:mcp,db:db,user:user,downloads:downloads})[n]||null;}};
+window.pricedIn=pricedIn;
+window.claude=pricedIn;
+var claude=pricedIn;
+/* Preserve existing sign-in page buttons while using the shared sign-in dialog. */
+document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#acLogin,#acReg,#acOut');if(!t)return;if(t.id==='acOut'){api('/auth/logout',{method:'POST'}).catch(function(){}).then(function(){try{localStorage.removeItem(TK);}catch(x){}meP=null;authUser=null;location.reload();});return;}showGate('Use the sign-in form to continue.');});
 function boot(){try{document.documentElement.style.visibility='visible';if(document.body)document.body.style.visibility='hidden';}catch(e){}if(!token()){showGate();return;}requireUser().catch(function(){showGate('Please sign in to continue.');});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
