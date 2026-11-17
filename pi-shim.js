@@ -18,7 +18,6 @@ var mcp={
   }
   var path=tool==='firecrawl_agent'?'agent':tool==='firecrawl_scrape'?'scrape':'search';
   var r=await J(await fetch(W+'/fc/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)}));
-  if(path==='agent'&&r&&r.id)r.id='agent_run_'+r.id;
   return{payload:r};
  }
 };
