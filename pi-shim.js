@@ -18,7 +18,7 @@ window.fetch=function(input,init){var url=typeof input==='string'?input:(input&&
  if(isWorker&&/^\/auth\/(login|register)$/.test(path))return realFetch(input,init);
  if(isWorker&&path==='/auth/me'){if(!token())return Promise.reject(authError());return realFetch(input,init);}
  if(isWorker&&path==='/auth/logout')return requireUser().then(function(){return realFetch(input,init);});
- return requireUser().then(function(){return realFetch(input,init);});
+ return requireUser().then(function(){if(isWorker){init=Object.assign({},init||{});var h=Object.assign({},init.headers||{});if(!h.Authorization&&token())h.Authorization='Bearer '+token();init.headers=h;}return realFetch(input,init);});
 };
 function reveal(){try{document.documentElement.style.visibility='visible';if(document.body)document.body.style.visibility='visible';}catch(e){}if(gate)gate.hidden=true;}
 function showGate(message){if(!document.body)return;try{document.documentElement.style.visibility='visible';document.body.style.visibility='hidden';}catch(e){}
