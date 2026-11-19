@@ -10,7 +10,7 @@ function demoError(){var e=new Error('Demo mode: live data and network calls are
 function enterDemo(){try{sessionStorage.setItem('pi-demo','1');}catch(e){}try{location.hash='analysis';}catch(e){}location.reload();}
 function exitDemo(){try{sessionStorage.removeItem('pi-demo');}catch(e){}try{location.hash='';}catch(e){}location.reload();}
 window.piEnterDemo=enterDemo;
-if(DEMO){/* Demo is sample-only: nothing may leave the browser. */var denyNet=function(){throw demoError();};try{XMLHttpRequest.prototype.open=denyNet;}catch(e){}try{navigator.sendBeacon=function(){return false;};}catch(e){}try{window.WebSocket=denyNet;}catch(e){}try{window.EventSource=denyNet;}catch(e){}}
+if(DEMO){/* Demo is sample-only: nothing may leave the browser. */try{var _m={},_s={getItem:function(k){return Object.prototype.hasOwnProperty.call(_m,k)?_m[k]:null;},setItem:function(k,v){_m[k]=String(v);},removeItem:function(k){delete _m[k];},clear:function(){_m={};},key:function(i){return Object.keys(_m)[i]||null;}};Object.defineProperty(_s,'length',{get:function(){return Object.keys(_m).length;}});Object.defineProperty(window,'localStorage',{value:_s,configurable:true});}catch(e){}var denyNet=function(){throw demoError();};try{XMLHttpRequest.prototype.open=denyNet;}catch(e){}try{navigator.sendBeacon=function(){return false;};}catch(e){}try{window.WebSocket=denyNet;}catch(e){}try{window.EventSource=denyNet;}catch(e){}}
 /* Keep the application hidden until a server-verified session is available. */
 try{document.documentElement.style.visibility='hidden';}catch(e){}
 function token(){try{return localStorage.getItem(TK);}catch(e){return null;}}
