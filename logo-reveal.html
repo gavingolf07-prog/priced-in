@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Priced In – Logo Reveal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,WONK@144,900,1&display=swap">
+<style>
+html,body{height:100%;margin:0;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#16203d 0%,#0b0f1d 78%)}
+#bg{position:fixed;inset:0}
+.grid{position:absolute;inset:0;opacity:0;background-image:linear-gradient(rgba(120,140,200,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(120,140,200,.08) 1px,transparent 1px);background-size:94px 94px}
+.c{position:absolute;width:16px;opacity:0;transform:scaleY(0)}
+.c::before{content:"";position:absolute;left:7px;width:2px;top:0;bottom:0;background:currentColor}
+.c i{position:absolute;left:0;width:16px}
+.t{position:absolute;opacity:0;white-space:nowrap;font:13px ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.02em}
+#sv{position:fixed;left:50%;top:50%;width:min(94vw,170vmin);height:auto;transform:translate(-50%,-50%);overflow:visible}
+.pl{fill:none;stroke:#3fcfb2;stroke-width:4;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;filter:drop-shadow(0 0 6px rgba(63,207,178,.6))}
+.fx{transform-box:fill-box;transform-origin:center}
+.org,.dot,.ring{opacity:0}
+.ln{fill:none;stroke-width:40;stroke-dasharray:1;stroke-dashoffset:1}
+.word{font:900 160px "Fraunces",Georgia,serif;font-variation-settings:"opsz" 144,"WONK" 1;letter-spacing:-.035em;fill:#e6e8f5;opacity:0}
+#wr{transform-box:fill-box;transform-origin:left center;transform:scaleX(0)}
+.go *{animation-fill-mode:both!important}
+.go .ring{animation-fill-mode:forwards!important}
+.go .grid{animation:fade .8s ease-out}
+.go .c{animation:grow .6s cubic-bezier(.2,.8,.2,1) calc(.2s + var(--i)*.05s)}
+.go .t{animation:fade .9s ease-out calc(.3s + var(--j)*.1s),drift 7s ease-in-out infinite alternate}
+.go #bg{animation:dim 1s ease-in-out 3.3s}
+.go .pl{animation:draw 1.6s cubic-bezier(.45,0,.35,1) .5s}
+.go .org{animation:pop .5s cubic-bezier(.34,1.56,.64,1) 2s}
+.go .ln{animation:draw .8s cubic-bezier(.65,0,.35,1) var(--d)}
+.go .dot{animation:pop .5s cubic-bezier(.34,1.56,.64,1) calc(var(--d) + .7s)}
+.go .ring{animation:ring .8s ease-out var(--rd,0s)}
+.go .pan{animation:pan 1s cubic-bezier(.65,0,.35,1) 3.3s}
+.go .word{animation:word 1s cubic-bezier(.22,1,.36,1) 3.6s}
+.go #wr{animation:wipe 1s cubic-bezier(.22,1,.36,1) 3.6s}
+@keyframes fade{from{opacity:0}to{opacity:var(--o,1)}}
+@keyframes grow{from{opacity:0;transform:scaleY(0)}to{opacity:1;transform:scaleY(1)}}
+@keyframes drift{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+@keyframes dim{to{opacity:.55}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+@keyframes ring{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(3.2)}}
+@keyframes pan{to{transform:translateX(var(--dx))}}
+@keyframes word{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
+@keyframes wipe{to{transform:scaleX(1)}}
+button{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(128,134,180,.25);color:#8c93b8;border:0;border-radius:999px;padding:9px 20px;font:15px system-ui,sans-serif;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.go *{animation-duration:.01s!important;animation-delay:0s!important}}
+</style>
+</head>
+<body id="b">
+<div id="bg"><div class="grid"></div></div>
+<svg id="sv" viewBox="0 0 1400 400" role="img" aria-label="Priced In logo">
+  <defs><clipPath id="wc"><rect id="wr" y="0" height="400"/></clipPath></defs>
+  <g class="pan" id="pan">
+    <path class="pl" id="pl" pathLength="1"/>
+    <g id="mk" transform="translate(610.5,-68.5) scale(.5)">
+      <line class="ln" pathLength="1" x1="179" y1="537" x2="845" y2="230" stroke="#3fcfb2" style="--d:2.3s"/>
+      <line class="ln" pathLength="1" x1="179" y1="537" x2="845" y2="486" stroke="#8c9eff" style="--d:2.4s"/>
+      <line class="ln" pathLength="1" x1="179" y1="537" x2="845" y2="818" stroke="#f2a04a" style="--d:2.5s"/>
+      <circle class="fx ring" cx="179" cy="537" r="62" fill="none" stroke="#e6e8f5" stroke-width="6" style="--rd:2s"/>
+      <circle class="fx org" cx="179" cy="537" r="62" fill="#e6e8f5"/>
+      <circle class="fx ring" cx="845" cy="230" r="41" fill="none" stroke="#3fcfb2" stroke-width="6" style="--rd:3s"/>
+      <circle class="fx ring" cx="845" cy="486" r="41" fill="none" stroke="#8c9eff" stroke-width="6" style="--rd:3.1s"/>
+      <circle class="fx ring" cx="845" cy="818" r="41" fill="none" stroke="#f2a04a" stroke-width="6" style="--rd:3.2s"/>
+      <circle class="fx dot" cx="845" cy="230" r="41" fill="#3fcfb2" style="--d:2.3s"/>
+      <circle class="fx dot" cx="845" cy="486" r="41" fill="#8c9eff" style="--d:2.4s"/>
+      <circle class="fx dot" cx="845" cy="818" r="41" fill="#f2a04a" style="--d:2.5s"/>
+    </g>
+  </g>
+  <text id="wd" class="word" y="262" clip-path="url(#wc)">Priced In</text>
+</svg>
+<button id="r" type="button">Replay</button>
+<script>
+var R=function(s){return function(){s=(s*16807)%2147483647;return s/2147483647}}(7),
+W=innerWidth,H=innerHeight,n=Math.ceil(W/64),p=H*.7,h='',T='rgba(63,207,178,.32)',O='rgba(242,160,74,.32)';
+for(var i=0;i<n;i++){var o=p,c=o+(R()-.55)*46;p=Math.max(H*.5,Math.min(H*.85,c));
+var tp=Math.min(o,c),bh=Math.max(6,Math.abs(c-o)),wt=tp-6-R()*16,wb=tp+bh+6+R()*16,col=c<o?T:O;
+h+='<div class="c" style="left:'+(i*64+24)+'px;top:'+wt+'px;height:'+(wb-wt)+'px;color:'+col+';--i:'+i+'"><i style="top:'+(tp-wt)+'px;height:'+bh+'px;background:'+col+'"></i></div>'}
+var tx=['AMZN 201.34 +0.7%','DOW 43,444','P/E 24.6x','EPS 6.42','NVDA 141.88 +2.9%','S&P 5,968.4','GOOG 178.92 -0.2%','AAPL 227.52 +1.2%','DOW 43,444','P/E 24.6x','AMZN 201.34 +0.7%','NVDA 141.88 +2.9%','EPS 6.42','S&P 5,968.4'],
+cl=['rgba(140,158,255,.4)','rgba(63,207,178,.38)','rgba(242,160,74,.38)'];
+tx.forEach(function(s,j){h+='<span class="t" style="left:'+(R()*88)+'%;top:'+(R()*94)+'%;color:'+cl[j%3]+';--o:'+(.45+R()*.5)+';--j:'+j+';font-size:'+(11+R()*6)+'px">'+s+'</span>'});
+document.getElementById('bg').insertAdjacentHTML('beforeend',h);
+function layout(){var wd=document.getElementById('wd'),w=wd.getBBox().width,tot=385+50+w,left=(1400-tot)/2,nx=left+31.5,tX=nx+403.5;
+wd.setAttribute('x',tX);var wr=document.getElementById('wr');wr.setAttribute('x',tX-20);wr.setAttribute('width',w+60);
+document.getElementById('pan').style.setProperty('--dx',(nx-700)+'px');
+var d='M-1700 340',m=1700+700;for(var i=1;i<=80;i++){var t=i/80;d+=' L'+(-1700+m*t)+' '+(200+150*(1-t)+(R()-.5)*60*Math.min(1,(1-t)*3))}
+document.getElementById('pl').setAttribute('d',d)}
+var b=document.getElementById('b');
+function play(){b.classList.remove('go');void b.offsetWidth;b.classList.add('go')}
+document.getElementById('r').onclick=play;
+function start(){layout();play()}
+Promise.race([document.fonts.load('900 1em "Fraunces"'),new Promise(function(r){setTimeout(r,1500)})]).then(start,start);
+</script>
+</body>
+</html>
