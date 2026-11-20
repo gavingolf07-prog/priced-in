@@ -1310,3 +1310,90 @@ run();setInterval(run,15000);
 try{new MutationObserver(function(){clearTimeout(run.t);run.t=setTimeout(run,300)}).observe(document.body,{childList:true,subtree:true})}catch(e){}
 })();</script>
 </body></html>
+ <style id="pi-dash-css">
+#dashHost{display:none}
+#dashHost.qon{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px;align-items:start}
+#dashHost>.dEmpty{grid-column:1/-1;padding:28px;text-align:center;border:1px dashed var(--line);border-radius:14px}
+#dashHost .dw~.dEmpty{display:none}
+#dashHost .dw{min-width:0;border-radius:14px}
+#dashHost .dw.full{grid-column:1/-1}
+#dashHost .dw.drag{opacity:.4}
+#dashHost .dw>*:not(.dtb){margin:0!important;grid-area:auto!important}
+#dashHost #csBBSec,#dashHost #csBBBody{display:block!important}
+#dashHost #csBBBody .cs-grid{display:grid!important}
+#dashHost .cs-card{grid-area:auto!important}
+#dashHost .dtb{display:flex;align-items:center;gap:4px;margin:0 0 6px;font:600 13px var(--font-body);color:var(--muted)}
+#dashHost .dtb .sp{flex:1}
+#dashHost .dtb button{width:28px;height:28px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);cursor:pointer}
+#dashHost .dtb button:hover{border-color:var(--accent)}
+#dashHost .dh{cursor:grab;padding:2px 6px;font-size:18px;line-height:1;user-select:none;touch-action:none}
+/* home cards keep their look when hosted */
+#dashHost .dw>.card{cursor:default;display:block;border-top:1px solid var(--line);padding:16px}
+#dashHost .card h3{margin:0 0 10px;font:600 1.1rem var(--font-display)}
+#dashHost .card input{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);padding:0 12px;font:15px var(--font-num);height:38px;min-width:0}
+#dashHost .wl-add button{height:38px;border:0;border-radius:10px;background:var(--fg);color:var(--bg);font:700 14px var(--font-body);padding:0 16px;cursor:pointer}
+#dashDrawer .dgrp{font:700 12px var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 4px}
+#dashDrawer .dopt{display:flex;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+#dashDrawer .dopt input{accent-color:var(--accent);width:18px;height:18px}
+#dashDrawer .dopt.off{opacity:.5;cursor:not-allowed}
+#dashDrawer .dfoot{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+</style>
+<script id="pi-dash-js">(function(){
+var K='pi-dash',B=document.body,$=function(i){return document.getElementById(i)},wrap=document.querySelector('.shell .wrap'),bar=$('qbar');
+if(!wrap||!bar)return;
+/* [anchor id, label, group, 1 = move the enclosing .card] */
+var C=[['paSec','Price action','Overview'],['csSec','Company summary','Overview'],['csBBSec','Bears say / Bulls say','Overview'],['anSec','Analyst ratings','Overview'],['cmpSec','Compare open tabs','Overview'],['sec-news','News','News'],['sec-out','Where each case lands','Valuation'],['sec-pe','P/E ratio','Valuation'],['sec-peg','PEG ratio','Valuation'],['sec-grid','Your assumptions','Valuation'],['studioSec','Scenario studio','Valuation'],['sec-eps','Diluted EPS','Financials'],['sec-rev','Revenue','Financials'],['ratSec','Financial ratios','Financials'],['sec-shares','Diluted shares','Financials'],['sec-fair','What is priced in','Research'],['sec-implied','Implied expectations','Research'],['sec-pos','Position sizing','Research'],['sec-nb','Notebook','Research'],['sec-links','Research links','Research'],['ixGrid','Stock indexes','Home page'],['gArc','Market mood','Home page',1],['wlL','Watchlist','Home page',1],['aiSum','Market, translated (AI)','Home page',1],['mUp','Top gainers','Home page',1],['mDn','Top losers','Home page',1],['cE','Quick "is it priced in?"','Home page',1],['eC','Earnings this week','Home page',1]];
+var FULL=['anSec','sec-grid','cmpSec','ratSec','sec-news','studioSec'],DEF=['paSec','csSec','sec-out','anSec','sec-news','sec-fair'],M={},ph={},drag=null,S=null;
+C.forEach(function(c){M[c[0]]=c;});
+try{S=JSON.parse(localStorage.getItem(K));}catch(e){}
+if(!S||!Array.isArray(S.items))S={on:false,items:DEF.slice()};
+function save(){try{localStorage.setItem(K,JSON.stringify(S));}catch(e){}}
+function get(k){var e=$(k);return e&&M[k][3]?e.closest('.card'):e;}
+var host=document.createElement('div');host.id='dashHost';
+host.innerHTML='<p class="dEmpty">Your dashboard is empty. Press <b>Customize Dashboard</b> to add sections.</p>';
+wrap.appendChild(host);var empty=host.firstChild;
+var TB='<div class="dtb"><span class="dh" title="Drag to reorder" aria-label="Drag to reorder">\u283F</span><b></b><span class="sp"></span><button type="button" data-a="up" aria-label="Move up">\u25B2</button><button type="button" data-a="dn" aria-label="Move down">\u25BC</button><button type="button" data-a="x" aria-label="Remove from dashboard">\u2715</button></div>';
+function place(k){if(ph[k])return ph[k].w;var e=get(k);if(!e||!e.parentNode)return null;var p=document.createComment(k);e.parentNode.insertBefore(p,e);var w=document.createElement('div');w.className='dw'+(FULL.indexOf(k)>-1?' full':'');w.dataset.k=k;w.innerHTML=TB;w.querySelector('b').textContent=M[k][1];w.appendChild(e);host.insertBefore(w,empty);ph[k]={p:p,w:w,e:e};return w;}
+function unplace(k){var o=ph[k];if(!o)return;if(o.p.parentNode)o.p.parentNode.insertBefore(o.e,o.p);o.p.remove();o.w.remove();delete ph[k];}
+function rs(){setTimeout(function(){window.dispatchEvent(new Event('resize'));},60);}
+function render(){S.items.forEach(function(k){var w=place(k);if(w)host.insertBefore(w,empty);});Object.keys(ph).forEach(function(k){if(S.items.indexOf(k)<0)unplace(k);});rs();}
+function pressed(v){var b=$('dashBtn');if(b)b.setAttribute('aria-pressed',String(v));}
+function on(){wrap.classList.add('qd');wrap.classList.remove('q2');[].forEach.call(wrap.children,function(c){if(c!==host){c.classList.remove('qon');c.style.order='';}});[].forEach.call(bar.children,function(b){b.setAttribute('aria-pressed','false');});host.classList.add('qon');host.style.order=1;pressed(true);render();}
+function off(){Object.keys(ph).forEach(unplace);host.classList.remove('qon');pressed(false);}
+function sync(){if(S.on&&!/pg-on-/.test(B.className))on();else off();}
+function order(){S.items=[].map.call(host.querySelectorAll(':scope>.dw'),function(w){return w.dataset.k;});save();}
+/* buttons */
+var d1=document.createElement('button'),d2=document.createElement('button');
+d1.id='dashBtn';d1.type='button';d1.className='btn sm';d1.textContent='My Dashboard';
+d2.id='dashCust';d2.type='button';d2.className='btn sm';d2.textContent='Customize Dashboard';
+bar.appendChild(d1);bar.appendChild(d2);
+bar.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+if(b===d1){e.stopImmediatePropagation();S.on=true;save();sync();}
+else if(b===d2){e.stopImmediatePropagation();panel(true);}
+else if(S.on){S.on=false;save();off();}},true);
+/* toolbar + drag and drop */
+host.addEventListener('click',function(e){var a=e.target.closest('[data-a]');if(!a)return;var w=a.closest('.dw'),t=a.dataset.a;
+if(t==='up'){var p=w.previousElementSibling;if(p&&p.classList.contains('dw'))host.insertBefore(w,p);order();}
+else if(t==='dn'){var n=w.nextElementSibling;if(n&&n.classList.contains('dw'))host.insertBefore(n,w);order();}
+else{S.items=S.items.filter(function(k){return k!==w.dataset.k;});save();render();fill();}});
+host.addEventListener('pointerdown',function(e){var h=e.target.closest('.dh');if(h)h.closest('.dw').draggable=true;});
+host.addEventListener('dragstart',function(e){var w=e.target;if(!w.classList||!w.classList.contains('dw'))return;drag=w;w.classList.add('drag');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',w.dataset.k);});
+host.addEventListener('dragover',function(e){if(!drag)return;e.preventDefault();var t=e.target.closest('.dw');if(!t||t===drag)return;var r=t.getBoundingClientRect(),after=(e.clientX-r.left)/r.width+(e.clientY-r.top)/r.height>1;host.insertBefore(drag,after?t.nextSibling:t);});
+function endDrag(){if(!drag)return;drag.draggable=false;drag.classList.remove('drag');drag=null;order();rs();}
+host.addEventListener('drop',function(e){e.preventDefault();endDrag();});host.addEventListener('dragend',endDrag);
+/* customize panel */
+var sc=document.createElement('div'),dr=document.createElement('aside');
+sc.className='scrim';dr.className='drawer';dr.id='dashDrawer';dr.setAttribute('aria-label','Customize dashboard');
+dr.innerHTML='<div class="drawer-head"><div><p class="ch-title" style="font-size:1.5rem">Customize dashboard</p><p class="ch-desc" style="font-size:14px">Tick sections to add them. Drag the handle on a section to reorder. Saved in this browser.</p></div><button class="nav-icon" id="dashX" type="button" aria-label="Close">\u2715</button></div><div id="dashList"></div><div class="dfoot"><button class="btn primary" id="dashDone" type="button">Done</button><button class="btn" id="dashReset" type="button">Reset to default</button></div>';
+document.body.appendChild(sc);document.body.appendChild(dr);
+function fill(){var h='',g='';C.forEach(function(c){if(c[2]!==g){g=c[2];h+='<div class="dgrp">'+g+'</div>';}var ok=!!get(c[0]);h+='<label class="dopt'+(ok?'':' off')+'"><input type="checkbox" data-k="'+c[0]+'"'+(S.items.indexOf(c[0])>-1?' checked':'')+(ok?'':' disabled')+'><span>'+c[1].replace(/&/g,'&amp;')+'</span></label>';});$('dashList').innerHTML=h;}
+function panel(o){if(o)fill();dr.classList.toggle('on',o);sc.classList.toggle('on',o);if(o)$('dashX').focus();}
+$('dashList').addEventListener('change',function(e){var k=e.target.dataset.k;if(!k)return;var i=S.items.indexOf(k);if(e.target.checked&&i<0){S.items.push(k);S.on=true;}else if(!e.target.checked&&i>-1)S.items.splice(i,1);save();if(S.on)sync();});
+$('dashX').onclick=$('dashDone').onclick=sc.onclick=function(){panel(false);};
+$('dashReset').onclick=function(){S={on:true,items:DEF.slice()};save();sync();fill();};
+document.addEventListener('keydown',function(e){if(e.key==='Escape')panel(false);});
+/* keep home cards on the home page, show the dashboard only on the Lab page */
+new MutationObserver(function(){clearTimeout(sync.t);sync.t=setTimeout(sync,30);}).observe(B,{attributes:true,attributeFilter:['class']});
+window.addEventListener('hashchange',function(){setTimeout(sync,60);});
+sync();setTimeout(sync,700);setTimeout(sync,2000);
+})();</script>
