@@ -37,7 +37,7 @@ function show(k){kind=k;[].forEach.call(el('aiTog').children,function(b){b.class
 if(c){var L=el('aiList');L.textContent='';if(c.stories&&c.stories.length){el('aiTxt').style.display='none';c.stories.forEach(function(s){L.appendChild(row(s))})}else{el('aiTxt').style.display='';el('aiTxt').style.whiteSpace='pre-line';el('aiTxt').textContent=c.text;el('aiTxt').style.color='var(--fg)'}if(sk)sk.style.display='none';meta.textContent=(c.partial?'Partial result \u00b7 ':'')+'Updated '+new Date(c.at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+(c.asOf?' \u00b7 data as of '+c.asOf:'')}
 else{el('aiList').textContent='';el('aiTxt').style.display='';el('aiTxt').style.color='var(--muted)';if(sk)sk.style.display='';el('aiTxt').textContent=k==='week'?'The weekly AI recap is generated on Fridays at 4:15 PM.':'The daily AI recap is generated once each weekday after 9 AM.';meta.textContent=''}}
 function save(k,d,partial){var st=(d.stories||[]).filter(function(x){return x&&x.title&&x.summary}).map(function(x){return{t:String(x.title),s:String(x.summary),d:String(x.detail||'')}}),t=d.summary||'';if(!st.length&&!t)return false;ls('piAi_'+k,{stamp:stamp(k),at:d.at||Date.now(),text:t,stories:st,asOf:d.asOf||'',partial:!!partial});ls('piAiRun',dayKey);show(k);return true}
-async function run(k){var mcp=null;try{mcp=window.claude&&window.claude.use?await window.claude.use('mcp'):null}catch(e){}
+async function run(k){return;var mcp=null;try{mcp=window.claude&&window.claude.use?await window.claude.use('mcp'):null}catch(e){}
 if(!mcp){meta.textContent='AI recap unavailable right now.';return}
 var cap=k==='week'?15:11;meta.textContent='Researching the market\u2026 (up to '+cap+' credits)';
 try{var j=pj(await mcp.callTool('Firecrawl','firecrawl_agent',{prompt:P(k),schema:S,model:'spark-1-mini',maxCredits:cap})),id=j&&j.id;if(!id)throw new Error('no job id');
@@ -48,15 +48,61 @@ el('aiTog').onclick=function(e){var b=e.target.closest('button');if(b)show(b.dat
 var n0=new Date(),fMin=n0.getHours()*60+n0.getMinutes(),isFri2=n0.getDay()===5&&fMin>=975;
 var want=isFri2?'week':'day';show(want);
 var c=ls('piAi_'+want);
-function boot(){var BU=((window.PI_CONFIG&&PI_CONFIG.backendUrl)||'').replace(/\/$/,'');
+function boot(){var BU=((window.PI_CONFIG&&PI_CONFIG.summaryUrl)||'').replace(/\/$/,'');
 if(BU){var pull=function(){['day','week'].forEach(function(k){fetch(BU+'/api/market-summary/'+k,{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(d){var x=ls('piAi_'+k);if(d&&d.stories&&d.stories.length&&!(x&&x.at===d.at))save(k,d,false)}).catch(function(){})})};pull();setInterval(pull,3e5);return}
-var fo=ls('piAiOvr1')!==1;var fresh=function(w){var x=ls('piAi_'+w);return x&&x.stamp===stamp(w)&&!x.partial};
-if(fo||(isWd&&(isFri2?!fresh('week'):ls('piAiRun')!==dayKey&&!fresh('day'))))setTimeout(function(){if(fo)ls('piAiOvr1',1);run(want)},1500);
-if(n0.getDay()===5&&!isFri2)setTimeout(function(){if(!fresh('week'))run('week')},(975-fMin)*6e4-n0.getSeconds()*1e3+2e3);}
+}
 if(document.readyState==='complete')boot();else window.addEventListener('load',boot);
 })();</script>
 <div class="g2"><div class="card"><h3>🚀 Top gainers</h3><div id="mUp"></div></div><div class="card"><h3>📉 Top losers</h3><div id="mDn"></div></div></div>
 <div class="g2"><div class="card"><h3>🗓️ Earnings this week</h3><div id="eC"></div></div></div>
+<div class="g2" id="artRow"><div class="card" id="artSec"><div class="arHd"><h3>📰 Latest articles</h3><small>From Financial Modeling Prep</small></div><div id="arGrid" class="arGrid"><div class="s">Loading…</div></div><small id="arNote" class="arNote"></small><button id="arMore" type="button" hidden>Show more articles</button></div></div>
+<style>
+#artSec{cursor:default;display:block}
+#artSec .arHd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#artSec .arHd h3{margin:0}
+#artSec .arHd small{color:var(--muted);font:12.5px var(--font-body)}
+#artSec .arGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+#artSec .arC{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;color:var(--fg);text-decoration:none;background:var(--surface);transition:border-color .18s ease,transform .18s ease}
+#artSec .arC:hover,#artSec .arC:focus-visible{border-color:var(--accent);transform:translateY(-2px)}
+#artSec .arImg{position:relative;aspect-ratio:16/9;background:var(--line);overflow:hidden}
+#artSec .arImg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+#artSec .arPh{display:none;position:absolute;inset:0;place-items:center;font:700 22px var(--font-display);letter-spacing:.04em;color:var(--muted)}
+#artSec .arNo .arPh{display:grid}
+#artSec .arB{display:flex;flex-direction:column;gap:6px;padding:12px 14px 14px;flex:1}
+#artSec .arB h4{margin:0;font:600 15px/1.3 var(--font-body);color:var(--fg);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#artSec .arB p{margin:0;font:13px/1.45 var(--font-body);color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#artSec .arM{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:4px;font:12px var(--font-body);color:var(--muted)}
+#artSec .arK{font-weight:700;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+#artSec .arNote{display:block;margin-top:10px;color:var(--muted)}
+#artSec #arMore{margin-top:14px;border:1px solid var(--line);background:none;color:var(--fg);border-radius:999px;padding:6px 14px;font:600 13px var(--font-body);cursor:pointer}
+</style>
+<script>(function(){
+var K='pi_art1',TTL=18e5,MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],grid=document.getElementById('arGrid'),more=document.getElementById('arMore'),note=document.getElementById('arNote'),list=[],shown=6;
+if(!grid)return;
+function ok(u){return typeof u==='string'&&/^https:\/\//i.test(u)}
+function lsr(){try{var c=JSON.parse(localStorage.getItem(K)||'null');return c&&Array.isArray(c.a)?c:null}catch(e){return null}}
+function lsw(v){try{localStorage.setItem(K,JSON.stringify(v))}catch(e){}}
+function txt(h){try{var d=new DOMParser().parseFromString(String(h||''),'text/html'),n=d.querySelector('li')||d.querySelector('p'),t=((n||d.body).textContent||'').replace(/\s+/g,' ').trim();return t.length>170?t.slice(0,167).replace(/\s+\S*$/,'')+'\u2026':t}catch(e){return''}}
+function norm(a){return(Array.isArray(a)?a:[]).map(function(x){return x&&x.title&&ok(x.link)?{t:String(x.title),l:x.link,i:ok(x.image)?x.image:'',d:String(x.date||'').slice(0,10),k:String(x.tickers||'').split(',')[0].split(':').pop().replace(/[^A-Za-z0-9.\-]/g,'').slice(0,10),s:txt(x.content)}:null}).filter(Boolean)}
+function when(d){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d);return m?MN[+m[2]-1]+' '+(+m[3]):''}
+function card(a){var c=document.createElement('a');c.className='arC';c.href=a.l;c.target='_blank';c.rel='noopener noreferrer';
+var m=document.createElement('div');m.className='arImg';
+if(a.i){var im=new Image();im.alt='';im.loading='lazy';im.decoding='async';im.referrerPolicy='no-referrer';im.onerror=function(){im.remove();m.classList.add('arNo')};im.src=a.i;m.appendChild(im)}else m.classList.add('arNo');
+var ph=document.createElement('span');ph.className='arPh';ph.textContent=a.k||'NEWS';m.appendChild(ph);c.appendChild(m);
+var b=document.createElement('div');b.className='arB';var h=document.createElement('h4');h.textContent=a.t;b.appendChild(h);
+if(a.s){var p=document.createElement('p');p.textContent=a.s;b.appendChild(p)}
+var mt=document.createElement('div');mt.className='arM';if(a.k){var k=document.createElement('span');k.className='arK';k.textContent=a.k;mt.appendChild(k)}var w=when(a.d);if(w){var s=document.createElement('span');s.textContent=w;mt.appendChild(s)}b.appendChild(mt);c.appendChild(b);return c}
+function draw(){grid.textContent='';list.slice(0,shown).forEach(function(a){grid.appendChild(card(a))});more.hidden=list.length<=shown}
+function set(a,msg){list=a;note.textContent=msg||'';draw()}
+more.onclick=function(){shown+=6;draw()};
+async function fetchNew(){var mcp=null;try{mcp=window.claude&&window.claude.use?await window.claude.use('mcp'):null}catch(e){}if(!mcp)throw 0;
+var r=await mcp.callTool('FMP','news',{endpoint:'fmp-articles',limit:12}),p=r&&(r.structuredContent||r.payload),a=Array.isArray(p)?p:(p&&Array.isArray(p.result)?p.result:null);
+if(!a){var t=r&&r.content&&r.content[0]&&r.content[0].text||'',j=JSON.parse(t);a=Array.isArray(j)?j:(j.result||j.data||[])}return norm(a)}
+async function load(){var c=lsr();if(c&&c.a.length&&Date.now()-c.at<TTL){set(c.a);return}
+try{var a=await fetchNew();if(!a.length)throw 0;lsw({at:Date.now(),a:a});set(a)}
+catch(e){if(c&&c.a.length)set(c.a,'Showing saved articles. Fresh ones will load shortly.');else grid.innerHTML='<div class="s">Couldn\u2019t load articles right now.</div>'}}
+load();setInterval(function(){if(!document.hidden)load()},TTL+1e4);
+})();</script>
 <h2 class="hm-lab-h">Go deeper in the Lab</h2><div class="hm-lab"><button type="button" data-pg="analysis"><b>Research any company</b><span>Pull up financials, an AI company summary, and the bull and bear cases.</span></button><button type="button" data-pg="analysis"><b>See what is priced in</b><span>Work backwards from today&rsquo;s price to the growth the market expects.</span></button><button type="button" data-pg="analysis"><b>Size a position</b><span>Model what a purchase could become, and keep your own notes per ticker.</span></button><button type="button" data-pg="learn"><b>Learn the jargon</b><span>Flip through flashcards, take a quick quiz, and read short plain-English lessons.</span></button></div><p class="hm-note">Market mood and the index cards use live FMP data; everything else is sample data for layout and fun. Not financial advice.</p></div></div>
 <script>(function(){var D=[['^GSPC','S&amp;P 500',-0.36,1],['^NDX','Nasdaq 100',-1.20,2],['^DJI','Dow Jones',0.13,3],['^RUT','Russell 2000',-0.32,4],['^VIX','VIX',-1.50,5]];
 var d=new Date(2026,10,13);document.getElementById('hmDate').textContent='Stock Indexes - '+d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -646,7 +692,7 @@ function cleanSnip(s){s=String(s==null?'':s);s=s.replace(/!\[[^\]]*\]\(\S*/g,' '
 function cleanTitle(s){s=String(s==null?'':s).replace(/!\[[^\]]*\]\(\S*/g,' ').replace(/\[([^\]]*)\]\([^)\s]*\)?/g,'$1').replace(/<[^>]*>/g,' ').replace(/https?:\/\/\S*/gi,' ').replace(/\s+/g,' ').trim();return s.length>140?s.slice(0,137).replace(/\s+\S*$/,'')+'\u2026':s;}
 function mcpItems(r){var p=r&&r.payload,txt=typeof p==='string'?p:(r&&Array.isArray(r.content)?r.content.map(function(b){return(b&&b.text)||'';}).join('\n'):'');var out=[],seen={};String(txt).split(/\n---\n/).forEach(function(b){var t=/^Title:\s*(.+)$/m.exec(b),u=/^URL:\s*(\S+)/m.exec(b),d=/^Published:\s*(\S+)/m.exec(b);if(!t||!u)return;var url=safeUrl(u[1]),title=t[1].trim();if(!url||seen[title])return;seen[title]=1;var sum='',hi=b.split(/^Highlights:\s*$/m)[1]||'';hi.split('\n').some(function(l){l=cleanSnip(l);l=l.replace(/^[\s#>*\-]+/,'').replace(/\*\*|__/g,'').trim();if(l.length>=60&&!/^(By |Published|Editorial)/.test(l)&&title.indexOf(l.slice(0,40))!==0){sum=l.length>230?l.slice(0,227).replace(/\s+\S*$/,'')+'\u2026':l;return true;}return false;});out.push({title:title,url:url,date:d&&/^\d{4}-/.test(d[1])?d[1]:'',source:srcName(url),summary:sum});});return out;}
 function fcFirms(items){var rows=[];function cl(t){return String(t).replace(/!\[[^\]]*\]\([^)]*\)/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1');}function first(c){return cl(c).split(/<br>/i).map(function(x){return x.trim();}).filter(Boolean)[0]||'';}function num(x){var m=String(x).replace(/,/g,'').match(/\$\s*([\d.]+)/g);return m?m.map(function(y){return parseFloat(y.replace(/[^\d.]/g,''));}):[];}function rt(x){x=String(x).split(/➝|->/).pop().trim();if(!x)return '';return /sell|underperform|underweight|reduce|negative/i.test(x)?'Sell':/buy|outperform|overweight|positive|accumulate|add/i.test(x)?'Buy':'Hold';}items.forEach(function(it){String(it.description||'').split('\n').forEach(function(l){var c=cl(l).split('|').map(function(x){return x.trim();});if(c.length<8)return;var sa=/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/.test(c[8]||'');if(sa){var q=num(c[6]),dd=new Date(c[8]+' 00:00 UTC');if(isFinite(dd)&&c[2]&&rt(c[4]))rows.push({firm:first(c[2]),analyst:first(c[1]),action:c[5]||'',rating:rt(c[4]),t:q.length?q[q.length-1]:NaN,prev:NaN,date:dd.toISOString().slice(0,10),_u:it.url});return;}var d=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(c[1]);if(!d)return;var p=num(c[6]),firm=first(l.split('|')[2]||'');if(!firm)return;rows.push({firm:firm,analyst:first(c[3]||''),action:c[4]||'',rating:rt(c[5]),t:p.length?p[p.length-1]:NaN,prev:p.length>1?p[0]:NaN,date:d[3]+'-'+('0'+d[1]).slice(-2)+'-'+('0'+d[2]).slice(-2),_u:it.url});});});rows.sort(function(a,b){return b.date.localeCompare(a.date);});var by={},out=[];rows.forEach(function(r){var k=r.firm.toLowerCase();if(!by[k]){by[k]=r;out.push(r);}else if(!by[k].rating&&r.rating)by[k].rating=r.rating;});return out.filter(function(r){return r.rating;});}
-var PI_CONFIG={backendUrl:'',strongUp:30,strongDown:-20,ttl:{news:30*6e4,analysts:12*36e5,summary:14*864e5}};
+var PI_CONFIG={backendUrl:'',summaryUrl:'',strongUp:30,strongDown:-20,ttl:{news:30*6e4,analysts:12*36e5,summary:14*864e5}};
 function piBackend(kind,sym,name){return fetch(PI_CONFIG.backendUrl.replace(/\/$/,'')+'/api/'+kind+'/'+encodeURIComponent(sym)+(name?'?name='+encodeURIComponent(name):''),{credentials:'include'}).then(function(r){if(!r.ok)throw{code:'backend_'+r.status};return r.json();});}
 async function fcCall(mcp,a,o){var news=/^latest news/i.test(a.query),sym=((news?/about\s+(\S+)/:/\(([A-Z0-9.\-]+)\)/).exec(a.query)||[])[1]||'',nm=(/about\s+\S+\s+\((.+?)\)/.exec(a.query)||[])[1]||'';if(PI_CONFIG.backendUrl)return piBackend(news?'news':'analysts',sym,nm);async function go(args){try{var r=await fcCT(mcp,'firecrawl_search',args,o),d=mcpData(r),it=[];(function f(x,n){if(n>6||!x)return;if(Array.isArray(x)){x.forEach(function(y){f(y,n+1);});return;}if(typeof x==='object'){if(typeof x.url==='string'&&(x.title||x.snippet||x.description)){it.push(x);return;}for(var k in x)f(x[k],n+1);}})(d&&d.data?d.data:d,0);return it;}catch(e){if(e&&(e.code==='not_in_manifest'||e.code==='approval_required'||e.code==='server_not_connected'||e.code==='not_granted'))throw e;return [];}}
 var items=[],firms=[];if(news){var rs=[await go({query:(nm||sym)+' '+sym+' stock news',objective:'Find recent news articles about this stock',limit:20,sources:[{type:'news'}],tbs:'qdr:m'})];var seen={};rs.forEach(function(x){x.forEach(function(y){if(!seen[y.url]){seen[y.url]=1;items.push(y);}});});}else{var aq=[sym+' stock forecast analyst ratings price targets by firm',sym+' analyst ratings',sym+' price target forecast'];for(var q=0;q<aq.length&&!firms.length;q++){items=await go({query:aq[q],objective:'Find pages listing individual Wall Street analyst ratings and price targets for this stock',limit:5,sources:[{type:'web'}],includeDomains:['marketbeat.com'],domainTools:false});firms=fcFirms(items);}}
